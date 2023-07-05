@@ -1,53 +1,91 @@
+
 <!DOCTYPE html>
-<html>
+<html  lang="pt-br">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Percepção musical</title>
   <style>
-    #footer {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 2.5rem;
+    div { word-wrap: break-word; }
+    h3 { margin: 0; }
+    #resposta-text { word-wrap: break-word; }
+    .button {
+      background-color: #4CAF50; /* Green */
+      border: none;
+      color: white;
+      padding: 8px 8px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      margin: 4px 2px;
+      cursor: pointer;
     }
+    #reset-button { background-color: #f44336; } /* Red */
+    #padrao-button { background-color: #008CBA; } /* Blue */
+    #resposta-button { background-color: #e7e7e7; color: black;} /* Gray */
   </style>
 </head>
 <body>
   <script src="https://unpkg.com/tone"></script>
   <script src="https://cdn.jsdelivr.net/gh/nastyox/Rando.js@master/code/plain-javascript/2.0.0/rando-min.js"></script>
-  <p>
-    <h3>Como usar:</h3>
-    * Ao clicar no botão <b>Tocar Padrão</b> com o campo <b>Quantos tons</b> vazio, vai tocar a sequência 1,2,3,4,5,6,7; <br>
-    * Se não preencher o campo <b>BPM</b>, o padrão será 40; <br>
-    * Antes de clicar em <b>Tocar sequência</b>, preencher o campo <b>Quantos tons</b>; <br>
-    * <b>Sempre</b> vão tocar 4 batidas antes de iniciar a sequência gerada; <br>
-    * Para apagar a sequência e gerar uma nova, clicar primeiro no botão <b>RESET</b>
-  </p>
+  <div>
+    <h3>Ferramenta para treino de percepção musical</h3>
+    (em desenvolvimento, bugs podem acontecer)
+  </div>
+  <div>
+    <p>
+      <h3>Como usar:</h3>
+      <dl>
+      <dt>* Ao clicar no botão <b>Tocar Padrão</b> com o campo <b>Quantos tons</b> vazio, vai tocar a sequência 1,2,3,4,5,6,7;</dt>
+      <dt>* Na resposta, o valor <b>0</b> equivale ao <b>silêncio</b>;</dt>
+      <dt>* Cada número equivale a uma nota na ordem natural de <b>Dó</b> até <b>Si</b>, 1=C, 2=D, 3=E, 4=F, 5=G, 6=A, 7=B ;</dt>
+      <dt>* Se não preencher o campo <b>BPM</b>, o padrão será <b>40</b>;</dt>
+      <dt>* A resposta da sequência gerada está na forma de números, ex: <b>1,2,3,1,2,1...</b></dt>
+      <dt>* Antes de clicar em <b>Tocar sequência</b>, preencher os campos <b>Quantos tons</b> e <b>Quantidade de sons</b>; </dt>
+      <dt>* <b>Tocar sequência</b> não apaga a sequência gerada, clique quantas vezes for preciso; </dt>
+      <dt>* É possível mudar o BPM para ouvir mais devagar ou rápido a sequência gerada; </dt>
+      <dt>* <b>Sempre</b> vão tocar 4 batidas antes de iniciar a sequência gerada; </dt>
+      <dt>* Para apagar a sequência e gerar uma nova, clicar primeiro no botão <b>RESET</b>; </dt>
+      </dl>
+    </p>
+  </div>
   <hr>
   <p>
-    <label for="inputBPM">BPM (de 10 a 100, ex:40):</label>
-    <input id="inputBPM" name="textinput" type="number" min="10" max="100"><br><br>
-    
-    <label for="inputQntTons">Quantos tons? (de 1 até 7, ex:3 -> (1,2,3):</label>
+    <label for="inputBPM">BPM (10 a 100):</label>
+    <input id="inputBPM" name="textinput" type="number" min="10" max="100">
+  </p><p>
+    <label for="inputQntTons">Quantos tons? (1 até 7):</label>
     <input id="inputQntTons" name="textinput" type="number" min="1" max="7">
-    <button id="padrao-button">Tocar padrão</button><br><br>
-
-    <label for="inputQntSons">Quantidade de sons? (de 1 até 100, ex:5 -> (1,2,3,3,1):</label>
+  </p><p>
+    <label for="inputQntSons">Quantos sons? (inclui silêncio, 1 até 100):</label>
     <input id="inputQntSons" name="textinput" type="number" min="1" max="100">
-    <button id="play-button">Tocar Sequência</button><br>
-    
+  </p><p>
+    <input id="inputQntSonsAleatorios" type="checkbox">
+    <label for="inputQntSonsAleatorios">Quantidade aleatória de sons (5 até quantidade de sons)</label>
   </p>
-  <button id="resposta-button">Ver resposta</button>
-  <p id="resposta-text">?</p>
 
-  <button id="reset-button">RESET</button><br>
+  <button class="button" id="play-button">Tocar Sequência</button>
+  <button class="button" id="padrao-button">Tocar padrão</button>
+  <button class="button" id="resposta-button">Ver resposta</button><br>
+  <hr>
+  <p id="resposta-text">Resposta: ?</p>
+  <hr>
+  <button class="button" id="reset-button">RESET</button><br><br>
+  <hr>
 
   <script type="module">
     import * as $C from 'https://cdn.jsdelivr.net/npm/js-combinatorics@2.1.1/combinatorics.min.js';
     window.Combinatorics = $C;
 
-    const basicSounds = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
-    const synth = new Tone.Synth().toDestination(); //new Tone.Synth().toMaster()
+    const basicSounds = ['0', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
+    const synth = new Tone.Synth().toDestination();
     const duration = '.1n'
     const noiseSynth = new Tone.NoiseSynth().toDestination();
+    const QUANTIDADE_MINIMA_DE_SONS = 5;
+    const QUANTIDADE_MAXIMA_DE_SONS = 100;
+    const BPM_PADRAO = 40;
+    const QUANTIDADE_MINIMA_BPM = 10;
 
     var sounds = [];
     var sequenciaResposta = [];
@@ -75,28 +113,24 @@
       return c1;
     }
 
-    function geraSequencia(qntTons) {
-      if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
-        DBG("Quantidade de tons inserida incorretamente");
-        alert("Defina quantos tons");
-        return;
-      }
-
+    function geraSequencia(qntTons) { //consider silence
       if(qntTons >= basicSounds.length)
-        qntTons = basicSounds.length
+        qntTons = basicSounds.length-1
 
       DBG("qntTons=", qntTons);
-      DBG("qntSons=", qntSons);
-
-      let seqIndex = [...Array(qntTons).keys()].map(x => ++x) //1,2,3,...,qntTons
-      DBG("seqIndex=", seqIndex);
 
       if(!sequenciaResposta || sequenciaResposta.length == 0) {
+        DBG("qntSons=", qntSons);
+
+        let seqIndex = [...Array(qntTons+1).keys()].map(x => x++) //will be [0,1,2,3,4...qntTons]
+
+        DBG("seqIndex=", seqIndex);
+
         let sequenciaAleatoria = geraCombinacao(seqIndex, qntSons);
         DBG("sequenciaAleatoria=", sequenciaAleatoria);
 
         for (var i = 0; i < sequenciaAleatoria.length; i++) {
-          sounds.push(basicSounds[sequenciaAleatoria[i]-1])
+          sounds.push(basicSounds[sequenciaAleatoria[i]])
         }
         sequenciaResposta = [...sequenciaAleatoria];
         DBG('sounds=', sounds);
@@ -125,12 +159,22 @@
 
     }
 
-    function tocarSequencia(qntTons) {
+    function tocarSequencia(qntTons) { //do not consider silence
       DBG("IN tocarSequencia")
-      let seqIndex = [...Array(qntTons).keys()].map(x => x); //will be [1,2,3,4...qntTons]
+
+      if(qntTons >= basicSounds.length)
+        qntTons = basicSounds.length-1;
+
+      let seqIndex = [...Array(qntTons).keys()].map(x => ++x); //will be [1,2,3,4...qntTons]
+      DBG('seqIndex=', seqIndex)
       let sequencia = [] //will be ['C4', 'D4', 'E4'...qntTons]
-      for(const n in seqIndex)
+
+      for(const n of seqIndex) {
+        DBG('n=', n)
         sequencia.push(basicSounds[n])
+      }
+
+    DBG('sequencia=', sequencia)
 
       let sequenciaNotas = new Tone.Sequence((time, note) => {
           synth.triggerAttackRelease(note, duration, time);
@@ -147,20 +191,32 @@
         document.getElementById("resposta-text").innerHTML = sequenciaResposta;
     })
 
-    document.getElementById('reset-button').addEventListener('click', () => { 
+    document.getElementById('reset-button').addEventListener('click', () => {
       sequenciaResposta = [];
       sounds = [];
-      document.getElementById("resposta-text").innerHTML = 'Aperte o botão <b>Tocar sequência</b> antes';  
+      document.getElementById("resposta-text").innerHTML = 'Aperte o botão <b>Tocar sequência</b> antes';
+      DBG("sequencia apagada!")
     })
 
     document.getElementById('padrao-button').addEventListener('click', async () => {
+      let qntTons = document.getElementById('inputQntTons').value * 1 || 7; //to int
+      if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
+        DBG("Quantidade de tons inserida incorretamente");
+        alert("Defina quantos tons");
+        return;
+      }
+
       if(Tone.Transport.state == "started") {
         Tone.Transport.stop()
         Tone.Transport.cancel()
       }
 
-      let qntTons = document.getElementById('inputQntTons').value * 1 || 7; //to int
-      Tone.Transport.bpm.value = document.getElementById('inputBPM').value * 1 || 40; //to int
+      let bpm = document.getElementById('inputBPM').value * 1;
+      DBG("bpm==", bpm)
+      if(bpm <= QUANTIDADE_MINIMA_BPM)
+        bpm = BPM_PADRAO;
+
+      Tone.Transport.bpm.value = bpm;
       
       await Tone.start();
       Tone.Transport.start();
@@ -169,24 +225,60 @@
     })
 
     document.getElementById('play-button').addEventListener('click', async () => {
+      let qntTons = document.getElementById('inputQntTons').value * 1; //to int
+
+      if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
+        alert("Quantidade de tons inserida incorretamente");
+        DBG("Defina quantos tons");
+        return;
+      }
+
+      let bpm = document.getElementById('inputBPM').value * 1;
+      DBG("bpm==", bpm)
+      if(bpm <= QUANTIDADE_MINIMA_BPM)
+        bpm = BPM_PADRAO;
+
+      qntSons = document.getElementById('inputQntSons').value * 1; //to int
+      if(qntSons == undefined || typeof qntSons != 'number' || qntSons <= 0) {
+        alert("Quantidade de sons inserida incorretamente");
+        DBG("Defina quantos sons");
+        return;
+      }
+
+      if(qntSons > QUANTIDADE_MAXIMA_DE_SONS)
+        qntSons = QUANTIDADE_MAXIMA_DE_SONS;
+
+      let quantidadeAleatoria = document.getElementById("inputQntSonsAleatorios").checked;
+
+      if((!sequenciaResposta || sequenciaResposta.length == 0) && quantidadeAleatoria) {
+        if(qntSons > QUANTIDADE_MINIMA_DE_SONS) {
+          qntSons = rando(QUANTIDADE_MINIMA_DE_SONS, qntSons)
+          DBG('qnt=', qntSons)
+        }
+        else {
+          let err = `Defina mais de ${QUANTIDADE_MINIMA_DE_SONS} sons`;
+          DBG(err);
+          alert(err);
+          return;
+        }
+      }
+
       if(Tone.Transport.state == "started") {
         Tone.Transport.stop()
         Tone.Transport.cancel()
       }
 
-      let qntTons = document.getElementById('inputQntTons').value * 1; //to int
-      Tone.Transport.bpm.value = document.getElementById('inputBPM').value * 1 || 40; //to int
-      qntSons = document.getElementById('inputQntSons').value * 1; //to int
-      geraSequencia(qntTons /*|| 3*/);
-      
+      Tone.Transport.bpm.value = bpm;
+      geraSequencia(qntTons);
+
       await Tone.start();
       Tone.Transport.start();
       cria();
-      
+
       DBG('audio is ready')
     }, false)
 
   </script>
-<footer id='footer'>Criado por João Bispo - jgfenix@gmail.com</footer>
+  <footer id='footer'> Criado por João Bispo <br><b>Em caso de problemas, reportar para jgfenix@yahoo.com.br</b><br><br></footer>
 </body>
 </html>
