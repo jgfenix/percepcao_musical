@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://unpkg.com/tone"></script>
+  <script src="https://cdn.jsdelivr.net/gh/nastyox/Rando.js@master/code/plain-javascript/2.0.0/rando-min.js"></script>
+  <p>
+    <h3>Como usar:</h3>
+    * Ao clicar no botão <b>Tocar Padrão</b> com o campo <b>Quantos tons</b> vazio, vai tocar a sequência 1,2,3,4,5,6,7; <br>
+    * Se não preencher o campo <b>BPM</b>, o padrão será 40; <br>
+    * Antes de clicar em <b>Tocar sequência</b>, preencher o campo <b>Quantos tons</b>; <br>
+    * <b>Sempre</b> vão tocar 4 batidas antes de iniciar a sequência gerada; <br>
+    * Para apagar a sequência e gerar uma nova, clicar primeiro no botão <b>RESET</b>
+  </p>
+  <hr>
+  <p>
+    <label for="inputBPM">BPM (de 10 a 100, ex:40):</label>
+    <input id="inputBPM" name="textinput" type="number" min="10" max="100"><br><br>
+    
+    <label for="inputQntTons">Quantos tons? (de 1 até 7, ex:3 -> (1,2,3):</label>
+    <input id="inputQntTons" name="textinput" type="number" min="1" max="7">
+    <button id="padrao-button">Tocar padrão</button><br><br>
+
+    <label for="inputQntSons">Quantidade de sons? (de 1 até 100, ex:5 -> (1,2,3,3,1):</label>
+    <input id="inputQntSons" name="textinput" type="number" min="1" max="100">
+    <button id="play-button">Tocar Sequência</button><br>
+    
+  </p>
+  <button id="resposta-button">Ver resposta</button>
+  <p id="resposta-text">?</p>
+
+  <button id="reset-button">RESET</button><br>
+
+  <script type="module">
+    import * as $C from 'https://cdn.jsdelivr.net/npm/js-combinatorics@2.1.1/combinatorics.min.js';
+    window.Combinatorics = $C;
+
+    const basicSounds = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
+    const synth = new Tone.Synth().toDestination(); //new Tone.Synth().toMaster()
+    const duration = '.1n'
+    const noiseSynth = new Tone.NoiseSynth().toDestination();
+
+    var sounds = [];
+    var sequenciaResposta = [];
+    var qntSons = 0;
+    var reset = true;
+
+    function DBG(...args) {
+      // console.log(...args)
+    }
+
+    function geraCombinacao(arr, qnt) {
+      let c = new Combinatorics.Permutation(arr,arr.length);
+      DBG("tamanho da permutacao original ", [...c].length)
+      let c1 = [];
+      
+      while(c1.length < qnt) {
+        let sample = c.sample()
+        let indiceAleatorio = rando(sample.length-1)
+        DBG("sample ", sample, " indiceAleatorio=", indiceAleatorio, ' valor=', sample[indiceAleatorio])
+
+        c1.push(sample[indiceAleatorio])
+
+      }
+      reset = false;
+      return c1;
+    }
+
+    function geraSequencia(qntTons) {
+      if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
+        DBG("Quantidade de tons inserida incorretamente");
+        alert("Defina quantos tons");
+        return;
+      }
+
+      if(qntTons >= basicSounds.length)
+        qntTons = basicSounds.length
+
+      DBG("qntTons=", qntTons);
+      DBG("qntSons=", qntSons);
+
+      let seqIndex = [...Array(qntTons).keys()].map(x => ++x) //1,2,3,...,qntTons
+      DBG("seqIndex=", seqIndex);
+
+      if(!sequenciaResposta || sequenciaResposta.length == 0) {
+        let sequenciaAleatoria = geraCombinacao(seqIndex, qntSons);
+        DBG("sequenciaAleatoria=", sequenciaAleatoria);
+
+        for (var i = 0; i < sequenciaAleatoria.length; i++) {
+          sounds.push(basicSounds[sequenciaAleatoria[i]-1])
+        }
+        sequenciaResposta = [...sequenciaAleatoria];
+        DBG('sounds=', sounds);
+      }
+    }
+
+    function cria() {
+      let localSounds = [...sounds];
+      localSounds.push('END')
+
+      let sequenciaBPM = new Tone.Sequence((time, note) => {
+        if(note != 'END') {
+          noiseSynth.triggerAttackRelease();
+        }
+        else {
+          let sequenciaNotas = new Tone.Sequence((time, note) => {
+            if(note != 'END'){
+              synth.triggerAttackRelease(note, duration, time);
+              noiseSynth.triggerAttackRelease();
+            }
+          }, localSounds).start();
+          sequenciaNotas.loop = 1;
+        }
+      }, [1,2,3,4,'END']/*localSounds*/).start();
+      sequenciaBPM.loop = 1;
+
+    }
+
+    function tocarSequencia(qntTons) {
+      DBG("IN tocarSequencia")
+      let seqIndex = [...Array(qntTons).keys()].map(x => x); //will be [1,2,3,4...qntTons]
+      let sequencia = [] //will be ['C4', 'D4', 'E4'...qntTons]
+      for(const n in seqIndex)
+        sequencia.push(basicSounds[n])
+
+      let sequenciaNotas = new Tone.Sequence((time, note) => {
+          synth.triggerAttackRelease(note, duration, time);
+        }, sequencia).start();
+      sequenciaNotas.loop = 0;
+      
+      DBG("OUT tocarSequencia")
+    }
+
+    document.getElementById('resposta-button').addEventListener('click', () => {
+      if(!sequenciaResposta || sequenciaResposta.length == 0)
+        document.getElementById("resposta-text").innerHTML = 'Aperte o botão <b>Tocar sequência</b> antes';
+      else
+        document.getElementById("resposta-text").innerHTML = sequenciaResposta;
+    })
+
+    document.getElementById('reset-button').addEventListener('click', () => { 
+      sequenciaResposta = [];
+      sounds = [];
+      document.getElementById("resposta-text").innerHTML = 'Aperte o botão <b>Tocar sequência</b> antes';  
+    })
+
+    document.getElementById('padrao-button').addEventListener('click', async () => {
+      if(Tone.Transport.state == "started") {
+        Tone.Transport.stop()
+        Tone.Transport.cancel()
+      }
+
+      let qntTons = document.getElementById('inputQntTons').value * 1 || 7; //to int
+      Tone.Transport.bpm.value = document.getElementById('inputBPM').value * 1 || 40; //to int
+      
+      await Tone.start();
+      Tone.Transport.start();
+      
+      tocarSequencia(qntTons);
+    })
+
+    document.getElementById('play-button').addEventListener('click', async () => {
+      if(Tone.Transport.state == "started") {
+        Tone.Transport.stop()
+        Tone.Transport.cancel()
+      }
+
+      let qntTons = document.getElementById('inputQntTons').value * 1; //to int
+      Tone.Transport.bpm.value = document.getElementById('inputBPM').value * 1 || 40; //to int
+      qntSons = document.getElementById('inputQntSons').value * 1; //to int
+      geraSequencia(qntTons /*|| 3*/);
+      
+      await Tone.start();
+      Tone.Transport.start();
+      cria();
+      
+      DBG('audio is ready')
+    }, false)
+
+  </script>
+<footer id='footer'>Criado por João Bispo - jgfenix@gmail.com</footer>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  <script src="https://unpkg.com/tone"></script>
+  <p>
+    <label for="inputBPM">BPM (de 10 a 100. ex:50):</label>
+    <input id="inputBPM" name="textinput" type="number" min="10" max="100"><br><br>
+
+    <label for="inputQntTons">Quantos tons? (de 1 até 7. ex:3 -> (1,2,3):</label>
+    <input id="inputQntTons" name="textinput" type="number" min="1" max="7">
+    
+    
+    <button id="padrao-button">Tocar padrão(1,2,3,4,5,6,7)</button><br><br>
+  </p>
+
+  <script type="module">
+    // import * as $C from 'https://cdn.jsdelivr.net/npm/js-combinatorics@2.1.1/combinatorics.min.js';
+    // window.Combinatorics = $C;
+
+
+    const basicSounds = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
+    const synth = new Tone.Synth().toDestination();
+    const duration = '.8n'
+
+    function tocarSequencia(qntTons) {
+      console.log("IN tocarSequencia")
+      
+      let sequenciaNotas = new Tone.Sequence((time, note) => {
+          console.log("time=", time);
+          synth.triggerAttackRelease(note, duration, time);
+        }, basicSounds).start();
+      sequenciaNotas.loop = 1;
+      
+      console.log("OUT tocarSequencia")
+    }
+
+    document.getElementById('padrao-button').addEventListener('click', async () => {
+      if(Tone.Transport.state == "started") {
+        Tone.Transport.stop()
+      }
+
+      let qntTons = document.getElementById('inputQntTons').value * 1 || 7; //to int
+      Tone.Transport.bpm.value = document.getElementById('inputBPM').value * 1 || 40; //to int
+
+      await Tone.start();
+      Tone.Transport.start();
+
+      tocarSequencia(qntTons);
+    })
+
+  </script>
+</body>
+</html>
