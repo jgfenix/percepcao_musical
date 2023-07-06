@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html  lang="pt-br">
 <head>
@@ -27,8 +26,12 @@
   </style>
 </head>
 <body>
-  <script src="https://unpkg.com/tone"></script>
-  <script src="https://cdn.jsdelivr.net/gh/nastyox/Rando.js@master/code/plain-javascript/2.0.0/rando-min.js"></script>
+  <script src="https://unpkg.com/tone">
+    // https://github.com/Tonejs/Tone.js
+  </script>
+  <script src="https://cdn.jsdelivr.net/gh/nastyox/Rando.js@master/code/plain-javascript/2.0.0/rando-min.js">
+    // https://github.com/nastyox/Rando.js
+  </script>
   <div>
     <h3>Ferramenta para treino de percepção musical</h3>
     (em desenvolvimento, bugs podem acontecer)
@@ -37,16 +40,19 @@
     <p>
       <h3>Como usar:</h3>
       <dl>
-      <dt>* Ao clicar no botão <b>Tocar Padrão</b> com o campo <b>Quantos tons</b> vazio, vai tocar a sequência 1,2,3,4,5,6,7;</dt>
+      <dt>* Ao clicar no botão <b>Tocar Padrão</b> com o campo <b>Quantos graus maiores</b> vazio, vai tocar a sequência 1,2,3,4,5,6,7;</dt>
       <dt>* Na resposta, o valor <b>0</b> equivale ao <b>silêncio</b>;</dt>
       <dt>* Cada número equivale a uma nota na ordem natural de <b>Dó</b> até <b>Si</b>, 1=C, 2=D, 3=E, 4=F, 5=G, 6=A, 7=B ;</dt>
       <dt>* Se não preencher o campo <b>BPM</b>, o padrão será <b>40</b>;</dt>
       <dt>* A resposta da sequência gerada está na forma de números, ex: <b>1,2,3,1,2,1...</b></dt>
-      <dt>* Antes de clicar em <b>Tocar sequência</b>, preencher os campos <b>Quantos tons</b> e <b>Quantidade de sons</b>; </dt>
+      <dt>* Antes de clicar em <b>Tocar sequência</b>, preencher os campos <b>Quantos graus maiores</b> e <b>Quantos sons</b>; </dt>
       <dt>* <b>Tocar sequência</b> não apaga a sequência gerada, clique quantas vezes for preciso; </dt>
       <dt>* É possível mudar o BPM para ouvir mais devagar ou rápido a sequência gerada; </dt>
       <dt>* <b>Sempre</b> vão tocar 4 batidas antes de iniciar a sequência gerada; </dt>
+      <dt>* É possível gerar uma quantidade aleatória de sons (de 1 até o valor definido em <b>Quantos sons</b>) </dt>
       <dt>* Para apagar a sequência e gerar uma nova, clicar primeiro no botão <b>RESET</b>; </dt>
+      <dt>* Por padrão a sequência começará com 1, se desmarcar essa opção ela começará entre 1 e o valor do maior grau definido; </dt>
+      <dt>* Para incluir silêncios aleatórios ou saltos (entre 1 e o maior grau definido), basta marcar essas opções; </dt>
       </dl>
     </p>
   </div>
@@ -55,14 +61,23 @@
     <label for="inputBPM">BPM (10 a 100):</label>
     <input id="inputBPM" name="textinput" type="number" min="10" max="100">
   </p><p>
-    <label for="inputQntTons">Quantos tons? (1 até 7):</label>
+    <label for="inputQntTons">Quantos graus maiores? (1 até 7):</label>
     <input id="inputQntTons" name="textinput" type="number" min="1" max="7">
   </p><p>
-    <label for="inputQntSons">Quantos sons? (inclui silêncio, 1 até 100):</label>
+    <label for="inputQntSons">Quantos sons? (1 até 100)</label>
     <input id="inputQntSons" name="textinput" type="number" min="1" max="100">
   </p><p>
+    <input id="inputIniciaEmUm" type="checkbox" checked>
+    <label for="inputIniciaEmUm">Iniciar com 1? (1,2,3... se não marcado, pode ser 3,4... 2,3...)</label><br><br>
+
+    <input id="inputIncluirSilencio" type="checkbox">
+    <label for="inputIncluirSilencio">Incluir silêncio</label><br><br>
+
+    <input id="inputSaltos" type="checkbox">
+    <label for="inputSaltos">Incluir Saltos (1,2,3,4,5,1,5...)</label><br><br>
+
     <input id="inputQntSonsAleatorios" type="checkbox">
-    <label for="inputQntSonsAleatorios">Quantidade aleatória de sons (5 até quantidade de sons)</label>
+    <label for="inputQntSonsAleatorios">Quantidade aleatória de sons (de 5 até quantidade de sons)</label>
   </p>
 
   <button class="button" id="play-button">Tocar Sequência</button>
@@ -75,10 +90,11 @@
   <hr>
 
   <script type="module">
-    import * as $C from 'https://cdn.jsdelivr.net/npm/js-combinatorics@2.1.1/combinatorics.min.js';
-    window.Combinatorics = $C;
+    // import * as $C from 'https://cdn.jsdelivr.net/npm/js-combinatorics@2.1.1/combinatorics.min.js';
+    // window.Combinatorics = $C;
 
-    const basicSounds = ['0', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
+    const SILENCE = 0;
+    const basicSounds = [`${SILENCE}`, 'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'/*, 'C5'*/];
     const synth = new Tone.Synth().toDestination();
     const duration = '.1n'
     const noiseSynth = new Tone.NoiseSynth().toDestination();
@@ -93,40 +109,94 @@
     var reset = true;
 
     function DBG(...args) {
-      // console.log(...args)
+      console.log(...args)
     }
 
-    function geraCombinacao(arr, qnt) {
-      let c = new Combinatorics.Permutation(arr,arr.length);
-      DBG("tamanho da permutacao original ", [...c].length)
-      let c1 = [];
+    function geraCombinacao(arr, qnt, incluirSilencio, iniciaEmUm, incluirSaltos) {
+      let combinacao = [];
+      DBG("arr =", arr);
+      DBG("qnt =", qnt);
+      DBG("incluirSilencio =", incluirSilencio);
+      DBG("iniciaEmUm =", iniciaEmUm);
+      DBG("incluirSaltos =", incluirSaltos);
+
+      let lastArrValue = arr[arr.length-1];
       
-      while(c1.length < qnt) {
-        let sample = c.sample()
-        let indiceAleatorio = rando(sample.length-1)
-        DBG("sample ", sample, " indiceAleatorio=", indiceAleatorio, ' valor=', sample[indiceAleatorio])
+      while(combinacao.length < qnt) {
+        if(combinacao.length == 0) {
+          if (iniciaEmUm)
+            combinacao.push(1)
+          else
+            combinacao.push(arr[rando(arr[0],arr.length-1)]);
+        }
+        else {
+          let lastNumberPushed = combinacao[combinacao.length-1];
+          DBG('arr[length-1]=', lastArrValue)
 
-        c1.push(sample[indiceAleatorio])
+          let jaIncluiuValorMaximo = combinacao.includes(lastArrValue)
+          DBG("jaIncluiuValorMaximo=", jaIncluiuValorMaximo)
 
+          if(!jaIncluiuValorMaximo) { //forçando continuar subindo
+            combinacao.push(lastNumberPushed+1)
+            continue;
+          }
+
+          if(incluirSaltos) {
+            let randomCoin = rando(0,3); //1/3 de probabilidade?
+            if(randomCoin == 1) {
+              if(lastNumberPushed == 1)
+                combinacao.push(lastArrValue);
+              else if(lastNumberPushed == lastArrValue)
+                combinacao.push(1);
+              continue;
+            }
+          }
+
+          let randomNumber = rando(-1,1)
+          let diff = lastNumberPushed + randomNumber;
+          DBG("diff = ", diff)
+
+          if(diff > 0 && diff <= lastArrValue)
+            combinacao.push(diff)
+        }
+      } //end while
+
+      if(incluirSilencio) {
+        for (let i = 1; i < combinacao.length; i++) { //por enquanto pulando o primeiro índice
+          let randomCoin = rando(0,3);
+          if(randomCoin == 1) {
+            // combinacao[i] = SILENCE;
+            combinacao.splice(i, 0, SILENCE);
+            combinacao.pop()
+          }
+        }
       }
+      DBG("combinacao=", combinacao);
       reset = false;
-      return c1;
+      return combinacao;
     }
 
-    function geraSequencia(qntTons) { //consider silence
+    function geraSequencia(qntTons, incluirSilencio, iniciaEmUm, incluirSaltos) {
       if(qntTons >= basicSounds.length)
         qntTons = basicSounds.length-1
 
       DBG("qntTons=", qntTons);
+      DBG("incluirSilencio=", incluirSilencio);
+      DBG("incluirSaltos=", incluirSaltos);
 
       if(!sequenciaResposta || sequenciaResposta.length == 0) {
         DBG("qntSons=", qntSons);
 
-        let seqIndex = [...Array(qntTons+1).keys()].map(x => x++) //will be [0,1,2,3,4...qntTons]
+        let seqIndex = []
+
+        // if(incluirSilencio)
+        //   seqIndex = [...Array(qntTons+1).keys()].map(x => x++) //will be [0,1,2,3,4...qntTons]
+        // else
+          seqIndex = [...Array(qntTons).keys()].map(x => ++x) //will be [1,2,3,4...qntTons]
 
         DBG("seqIndex=", seqIndex);
 
-        let sequenciaAleatoria = geraCombinacao(seqIndex, qntSons);
+        let sequenciaAleatoria = geraCombinacao(seqIndex, qntSons, incluirSilencio, iniciaEmUm, incluirSaltos);
         DBG("sequenciaAleatoria=", sequenciaAleatoria);
 
         for (var i = 0; i < sequenciaAleatoria.length; i++) {
@@ -202,7 +272,7 @@
       let qntTons = document.getElementById('inputQntTons').value * 1 || 7; //to int
       if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
         DBG("Quantidade de tons inserida incorretamente");
-        alert("Defina quantos tons");
+        alert("Defina Quantos graus maiores");
         return;
       }
 
@@ -229,7 +299,7 @@
 
       if(qntTons == undefined || typeof qntTons != 'number' || qntTons <= 0) {
         alert("Quantidade de tons inserida incorretamente");
-        DBG("Defina quantos tons");
+        DBG("Defina Quantos graus maiores");
         return;
       }
 
@@ -250,6 +320,13 @@
 
       let quantidadeAleatoria = document.getElementById("inputQntSonsAleatorios").checked;
 
+      let incluirSilencio = document.getElementById("inputIncluirSilencio").checked;
+
+      let incluirSaltos = document.getElementById("inputSaltos").checked;
+
+      let iniciaEmUm = document.getElementById("inputIniciaEmUm").checked;
+
+
       if((!sequenciaResposta || sequenciaResposta.length == 0) && quantidadeAleatoria) {
         if(qntSons > QUANTIDADE_MINIMA_DE_SONS) {
           qntSons = rando(QUANTIDADE_MINIMA_DE_SONS, qntSons)
@@ -269,7 +346,7 @@
       }
 
       Tone.Transport.bpm.value = bpm;
-      geraSequencia(qntTons);
+      geraSequencia(qntTons, incluirSilencio, iniciaEmUm, incluirSaltos);
 
       await Tone.start();
       Tone.Transport.start();
