@@ -3,7 +3,7 @@ const { exec } = require("child_process");
 const INDEX_HTML_PATH = "./";
 const INDEX_HTML_ARCHIVE_NAME = "index.html";
 
-const OUTPUT_PATH = "./output/";
+const OUTPUT_PATH = "./docs/";
 
 const HTML_MINIFIER_BIN = "./node_modules/html-minifier/cli.js";
 const HTML_MINIFIER_OPTS = "--remove-comments --remove-tag-whitespace --collapse-whitespace --remove-optional-tags";
