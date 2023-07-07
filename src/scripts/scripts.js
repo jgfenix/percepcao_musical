@@ -159,7 +159,7 @@ window.onload = function () {
       if(!sequenciaResposta || sequenciaResposta.length == 0)
         document.getElementById("resposta-text").innerHTML = 'Aperte o botão <b>Tocar sequência</b> antes';
       else
-        document.getElementById("resposta-text").innerHTML = sequenciaResposta.toString().replaceAll(",", "");
+        document.getElementById("resposta-text").innerHTML = sequenciaResposta
     })
 
     document.getElementById('reset-button').addEventListener('click', () => {
